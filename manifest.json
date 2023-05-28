@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "Webpage Auto-Reloader",
+    "description": "Automatically control and reload webpages at a certain time throughout the day",
+    "version": "1.0",
+    "permissions": [
+      "tabs"
+    ],
+    "action": {
+      "default_popup": "index.html"
+    }
+  }
+  

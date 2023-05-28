@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Countdown Timer</title>
+  <link rel="stylesheet" type="text/css" href="main.css" />
+</head>
+<body>
+  <div class="total_container"> 
+    <button id="test-button">Test</button>
+    <div class="title">
+      <h1>Webpage Auto-Reloader</h1>
+    </div>
+    <div class="container">
+      <div class="timer_info">      
+        <h2>Time #1</h2>
+        <div class="target_time">
+          <label for="timeInput" class="customlabel">Enter the target time:</label>
+          <input type="time" id="timeInput" required>
+        </div>
+        <label class="confirmButton">
+          <input type="checkbox" id="checkbox">
+          <div class="slider round">
+            <span class="on">Enabled</span>
+            <span class="off">Disabled</span>
+          </div>
+        </label>
+      </div>
+      <div class="timer_block">
+        <h2>Time Left</h2>
+        <div id="timer">
+          <span id="timer-text">00:00:00</span>
+        </div>
+      </div>
+      <script src="main.js"></script>
+    </div>
+  </div>
+</body>
+</html>
