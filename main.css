@@ -1,10 +1,12 @@
-.total_container {
-    width: 375px;
-    text-align: center;
+.totalContainer {
+  width: 375px;
+  text-align: center;
+  font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
-.timer_block {
-  background-color: #a09d9d;
+.timerBlock {
+  background-color: #bdbdbd;
+  box-shadow: -2px 3px 2px #848181;
   border-radius: 10px;
   align-items: center;
   justify-content: center;
@@ -12,8 +14,8 @@
   padding-bottom: 15px;
 }
 
-#timer {
-  font-size: 8vw;
+.timer {
+  font-size: 7vw;
   font-weight: bold;
   padding-right: 25px;
   padding-left: 25px;
@@ -23,16 +25,12 @@
   overflow: visible;
 }
 
-.target_time {
+.targetTime {
   padding-bottom: 15px;
 }
 
-.timer_info {
+.timerInfo {
   margin: 12px;
-}
-
-#timeInputTitle {
-  padding-bottom: 3px;
 }
 
 .container {
@@ -67,6 +65,7 @@
   right: 0;
   bottom: 0;
   background-color: #ccc;
+  box-shadow: -1px 1px 1px #6e6e6e;
   -webkit-transition: .4s;
   transition: .4s;
 }
@@ -79,16 +78,19 @@
   left: 4px;
   bottom: 4px;
   background-color: white;
+  box-shadow: -1px 1px 1px #6e6e6e;
   -webkit-transition: .4s;
   transition: .4s;
 }
 
 input:checked + .slider {
   background-color: #2196F3;
+  box-shadow: -1px 1px 1px #6e6e6e;
 }
 
 input:focus + .slider {
   box-shadow: 0 0 1px #2196F3;
+  box-shadow: -1px 1px 1px #6e6e6e;
 }
 
 input:checked + .slider:before {
@@ -97,20 +99,27 @@ input:checked + .slider:before {
   transform: translateX(80px);
 }
 
-.on
-{
+.on {
   display: none;
 }
 
-.on, .off
-{
+.on {
   color: white;
   position: absolute;
   transform: translate(-50%,-50%);
   top: 50%;
   left: 50%;
   font-size: 10px;
-  font-family: Verdana, sans-serif;
+}
+
+.off {
+  color: #202020;
+  position: absolute;
+  font-weight: 500;
+  transform: translate(-50%,-50%);
+  top: 50%;
+  left: 50%;
+  font-size: 10px;
 }
 
 input:checked+ .slider .on
@@ -125,4 +134,37 @@ input:checked + .slider .off
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+.addNewButton {
+	background:none;
+  border:none;
+	display:inline-block;
+	cursor:pointer;
+	color:#2196F3;
+	font-size:15px;
+	font-weight:bold;
+	padding:6px 24px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+}
+.addNewButton:hover {
+	background-color:#2196F3;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 100;
+	display:inline-block;
+	cursor:pointer;
+	font-size:15px;
+	padding:6px 24px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #ffffff;
+}
+.addNewButton:active {
+	position:relative;
+	top:1px;
+}
+
+.addNew {
+  text-align: center;
 }
