@@ -1,0 +1,22 @@
+<div class="container" id="timerContainer">
+  <div class="timerInfo">      
+    <h2 id="timeTitle"></h2>
+    <div class="targetTime">
+      <label for="timeInput" class="customlabel">Enter the target time:</label>
+      <input type="time" id="timeInput" required>
+    </div>
+    <label class="confirmButton">
+      <input type="checkbox" id="checkbox">
+      <div class="sliderRound">
+        <span class="on">Enabled</span>
+        <span class="off">Disabled</span>
+      </div>
+    </label>
+  </div>
+  <div class="timeBlock">
+    <h2>Time Left</h2>
+    <div class='timer' id="timer">
+      <span id="timer-text">00:00:00</span>
+    </div>
+  </div>
+</div>
