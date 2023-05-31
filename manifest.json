@@ -7,7 +7,7 @@
       "tabs"
     ],
     "action": {
-      "default_popup": "index.html"
+      "default_popup": "home.html"
     }
   }
   
