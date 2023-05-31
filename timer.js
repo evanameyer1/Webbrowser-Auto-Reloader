@@ -1,8 +1,18 @@
 let countdown = false;
-var timerCount = 1;
+var timerCount = 0;
+var toggleStatus = 1;
 
 createNewTimer();
+toggleAll();
 document.getElementById('addNewButton').addEventListener('click', createNewTimer);
+document.getElementById('toggleButton').addEventListener('click', toggleAll);
+document.getElementById('homeButton').addEventListener('click', function(){
+  window.location.href = 'home.html';
+})
+
+if (toggleStatus == 0) {
+  
+}
 
 function createNewTimer() {
   createElements();
@@ -61,10 +71,14 @@ function defineDates(timeInput) {
 };
 
 function createElements() {
+  // Increase TimerCount variable for next Timer
+  timerCount++;
+
   // Create container element
   var clone = document.createElement('div');
+  clone.className = 'test';
   clone.className = 'container';
-  clone.id = 'timerContainer' + timerCount;
+  clone.id = 'container' + timerCount;
 
   // Create timer_info element
   var timerInfo = document.createElement('div');
@@ -141,16 +155,6 @@ function createElements() {
   // Append timer_info to clone
   clone.appendChild(timerInfo);
 
-  // Create timer_block element
-  var timerBlock = document.createElement('div');
-  timerBlock.className = 'timerBlock';
-  timerBlock.id = 'timerBlock' + timerCount;
-
-  // Create h2 for Time Left
-  var h2TimeLeft = document.createElement('h2');
-  h2TimeLeft.textContent = 'Time Left';
-  timerBlock.appendChild(h2TimeLeft);
-
   // Create timer element
   var timer = document.createElement('div');
   timer.className = 'timer';
@@ -158,15 +162,48 @@ function createElements() {
 
   // Create timer-text span
   var timerText = document.createElement('span');
+  timerText.className = 'timerText';
   timerText.id = 'timerText' + timerCount;
   timerText.textContent = '00:00:00';
   timer.appendChild(timerText);
 
-  // Append timer to timer_block
+  // Create timerContainer
+  var timerContainer = document.createElement('div');
+  timerContainer.className = 'timerContainer';
+  timerContainer.id = 'timerContainer' + timerCount;
+
+  // Create a button element
+  var xButton = document.createElement('button');
+  xButton.type = 'button';
+  xButton.className = 'xButton';
+  xButton.id = 'xButton' + timerCount;
+
+  // Create an image element
+  var xImage = document.createElement('img');
+  xImage.src = 'x-icon.png';
+  xImage.alt = 'Button';
+
+  // Append the image to the button
+  xButton.appendChild(xImage);
+  timerContainer.appendChild(xButton);
+
+  // Create timerBlock element
+  var timerBlock = document.createElement('div');
+  timerBlock.className = 'timerBlock';
+  timerBlock.id = 'timerBlock' + timerCount;
+  timerContainer.appendChild(timerBlock);
+
+  // Create h2 for Time Left
+  var h2TimeLeft = document.createElement('h2');
+  h2TimeLeft.className = 'timeLeft'
+  h2TimeLeft.textContent = 'Time Left';
+  timerBlock.appendChild(h2TimeLeft);
+
+  // Append timer to timerBlock
   timerBlock.appendChild(timer);
 
-  // Append timer_block to clone
-  clone.appendChild(timerBlock);
+  // Append timerBlock to clone
+  clone.appendChild(timerContainer);
 
   // Insert newly created clone at the bottom of the parent element
   var container = document.getElementById('timerContainer');
@@ -181,9 +218,6 @@ function createElements() {
     parentElement.appendChild(clone);
     parentElement.appendChild(addButton);
   }
-
-  // Increase TimerCount variable for next Timer
-  timerCount++;
 };
 
 function generateListeners() {
@@ -192,6 +226,16 @@ function generateListeners() {
   elements.forEach((element, index) => {
     element.addEventListener('change', function() {
       verifyInput.bind(this)(index);
+    });
+  });
+
+  var elements = document.querySelectorAll('.xButton');
+
+  elements.forEach((element, index) => {
+    element.addEventListener('click', function() {
+      removeTimer(index);
+      reassignIDs();
+      assignTimers();
     });
   });
 
@@ -232,5 +276,122 @@ function generateListeners() {
       countdowns[index] = countdown; // Store the countdown interval in the array
     });
   });
+};  
 
-}  
+var lastAlertTime = 0;
+var alertDelay = 1000; // Delay in milliseconds between consecutive alerts
+
+function removeTimer(index) {
+  var currentTime = new Date().getTime();
+  if (currentTime - lastAlertTime < alertDelay) {
+    return; // Ignore consecutive calls within the delay period
+  }
+  
+  if (timerCount > 1) {
+    var timerName = 'container' + (index + 1);
+    var timerLoc = document.getElementById(timerName);
+    if (timerLoc) {
+      timerLoc.remove();
+      timerCount -= 1;
+      lastAlertTime = currentTime;
+    }    
+  } else {
+    alert('Must have at least one timer.');
+    lastAlertTime = currentTime;
+  }
+}
+
+function reassignIDs() {
+  var elements = document.querySelectorAll('.timerContainer');
+  elements.forEach((element, index) => {
+    element.id = 'timerContainer' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timerInfo');
+  elements.forEach((element, index) => {
+    element.id = 'timerInfo' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timeTitle');
+  elements.forEach((element, index) => {
+    element.id = 'timeTitle' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.targetTime');
+  elements.forEach((element, index) => {
+    element.id = 'targetTime' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.customLabel');
+  elements.forEach((element, index) => {
+    element.id = 'customLabel' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timeInput');
+  elements.forEach((element, index) => {
+    element.id = 'timeInput' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.confirmButton');
+  elements.forEach((element, index) => {
+    element.id = 'confirmButton' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.checkbox');
+  elements.forEach((element, index) => {
+    element.id = 'checkbox' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.sliderRound');
+  elements.forEach((element, index) => {
+    element.id = 'sliderRound' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.on');
+  elements.forEach((element, index) => {
+    element.id = 'on' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.off');
+  elements.forEach((element, index) => {
+    element.id = 'off' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timer');
+  elements.forEach((element, index) => {
+    element.id = 'timer' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timerText');
+  elements.forEach((element, index) => {
+    element.id = 'timerText' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.container');
+  elements.forEach((element, index) => {
+    element.id = 'container' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.xButton');
+  elements.forEach((element, index) => {
+    element.id = 'xButton' + (index + 1);
+  });
+
+  var elements = document.querySelectorAll('.timerBlock');
+  elements.forEach((element, index) => {
+    element.id = 'timerBlock' + (index + 1);
+  });
+}
+
+function toggleAll() {
+  var toggleButton = document.getElementById('toggleButton');
+  var checkboxes = document.querySelectorAll('.checkbox');
+
+  checkboxes.forEach((checkbox) => {
+    checkbox.checked = (toggleStatus === 0);
+  });
+
+  toggleStatus = (toggleStatus === 0) ? 1 : 0;
+
+  toggleButton.textContent = (toggleStatus === 0) ? "Toggle On" : "Toggle Off";
+};

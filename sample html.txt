@@ -13,10 +13,15 @@
       </div>
     </label>
   </div>
-  <div class="timeBlock">
+<div class="timerContainer">
+  <button type="button" class="xButton">
+     <img src="path/to/image.png" alt="Button">
+  </button>
+  <div class="timerBlock">
     <h2>Time Left</h2>
     <div class='timer' id="timer">
       <span id="timer-text">00:00:00</span>
     </div>
   </div>
+</div>
 </div>
