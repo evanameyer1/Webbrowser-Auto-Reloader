@@ -7,18 +7,8 @@ toggleAll();
 document.getElementById('addNewButton').addEventListener('click', createNewTimer);
 document.getElementById('toggleButton').addEventListener('click', toggleAll);
 document.getElementById('homeButton').addEventListener('click', function(){
-  window.location.href = 'home.html';
+  window.location.href = '../home/home.html';
 })
-
-if (toggleStatus == 0) {
-  
-}
-
-function createNewTimer() {
-  createElements();
-  assignTimers();
-  generateListeners();
-};
 
 function verifyInput(timeIndex) {
   var timeName = 'timeInput' + (timeIndex + 1);
@@ -76,7 +66,6 @@ function createElements() {
 
   // Create container element
   var clone = document.createElement('div');
-  clone.className = 'test';
   clone.className = 'container';
   clone.id = 'container' + timerCount;
 
@@ -180,7 +169,7 @@ function createElements() {
 
   // Create an image element
   var xImage = document.createElement('img');
-  xImage.src = 'x-icon.png';
+  xImage.src = '../x-icon.png';
   xImage.alt = 'Button';
 
   // Append the image to the button
@@ -268,12 +257,29 @@ function generateListeners() {
         timerElement.innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
         timerElement.style.fontSize = '5.5vw';
 
-        if (seconds <= 0 && (minutes <= 0 || minutes == null) && (hours <= 0 || hours == null) && checkboxStatus.checked === true) {
+        if (seconds <= 0 && (minutes <= 0 || minutes == "") && (hours <= 0 || hours == "") && checkboxStatus.checked === true) {
           reloadPage();
         }
       }, 1000);
 
       countdowns[index] = countdown; // Store the countdown interval in the array
+    });
+  });
+
+  var timers = document.querySelectorAll('.timeInput');
+  var switches = document.querySelectorAll('.checkbox');
+
+  // Add event listeners for timer inputs
+  timers.forEach(function(timer) {
+    timer.addEventListener('input', function() {
+      saveTimersData();
+    });
+  });
+
+  // Add event listeners for switch inputs
+  switches.forEach(function(switchInput) {
+    switchInput.addEventListener('change', function() {
+      saveTimersData();
     });
   });
 };  
@@ -381,7 +387,7 @@ function reassignIDs() {
   elements.forEach((element, index) => {
     element.id = 'timerBlock' + (index + 1);
   });
-}
+};
 
 function toggleAll() {
   var toggleButton = document.getElementById('toggleButton');
@@ -395,3 +401,54 @@ function toggleAll() {
 
   toggleButton.textContent = (toggleStatus === 0) ? "Toggle On" : "Toggle Off";
 };
+
+
+// Popup script
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Send message to the background script to retrieve the timers
+  chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
+    var timers = response.timers;
+
+    // Restore the timers in the popup
+    if (timers && timers.length > 0) {
+      timers.forEach(function(timer, index) {
+        var timeInput = document.getElementById('timeInput' + (index + 1));
+        if (timeInput) {
+          timeInput.value = timer;
+        }
+      });
+    }
+  });
+});
+
+// Popup script
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Send message to the background script to retrieve the timers
+  chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
+    var timersData = response.timers;
+
+    // Restore the timers in the popup
+    if (timersData && timersData.length > 0) {
+      timersData.forEach(function(data, index) {
+        var nameInput = document.getElementById('nameInput' + (index + 1));
+        var timeInput = document.getElementById('timeInput' + (index + 1));
+        var switchInput = document.getElementById('switchInput' + (index + 1));
+
+        if (nameInput && timeInput && switchInput) {
+          nameInput.value = data.name;
+          timeInput.value = data.time;
+          switchInput.checked = data.switch;
+        }
+      });
+    }
+  });
+});
+
+function createNewTimer() {
+  createElements();
+  assignTimers();
+  generateListeners();
+};
+
