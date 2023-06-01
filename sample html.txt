@@ -25,3 +25,37 @@
   </div>
 </div>
 </div>
+
+
+
+<div class="container" id="intervalContainer">
+  <div class="intervalInfo">      
+    <h2 id="intervalTitle"></h2>
+    <div class="intervalTime">
+      <label for="intervalInput" class="customlabel">Enter the target interval:</label>
+      <div class="intervalNumbers">
+        <input type="number" id="hoursInput" required>
+        <input type="number" id="minutesInput" required>
+        <input type="number" id="secondsInput" required>
+      </div>
+    </div>
+    <label class="confirmButton">
+      <input type="checkbox" id="checkbox">
+      <div class="sliderRound">
+        <span class="on">Enabled</span>
+        <span class="off">Disabled</span>
+      </div>
+    </label>
+  </div>
+<div class="timerContainer">
+  <button type="button" class="xButton">
+     <img src="path/to/image.png" alt="Button">
+  </button>
+  <div class="timerBlock">
+    <h2>Time Left</h2>
+    <div class='timer' id="timer">
+      <span id="timer-text">00:00:00</span>
+    </div>
+  </div>
+</div>
+</div>

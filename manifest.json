@@ -4,10 +4,12 @@
     "description": "Automatically control and reload webpages at a certain time throughout the day",
     "version": "1.0",
     "permissions": [
-      "tabs"
+      "storage", "tabs"
     ],
+    "background": {
+      "service_worker": "background.js"
+    }, 
     "action": {
-      "default_popup": "home.html"
+      "default_popup": "timer/timer.html"
     }
-  }
-  
+  }  
