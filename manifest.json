@@ -10,6 +10,6 @@
       "service_worker": "background.js"
     }, 
     "action": {
-      "default_popup": "timer/timer.html"
+      "default_popup": "home/home.html"
     }
   }  
