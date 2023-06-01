@@ -1,6 +1,7 @@
 let countdown = false;
 var timerCount = 0;
 var toggleStatus = 1;
+var loadTimer = 1;
 
 createNewTimer();
 toggleAll();
@@ -289,18 +290,17 @@ var alertDelay = 1000; // Delay in milliseconds between consecutive alerts
 
 function removeTimer(index) {
   var currentTime = new Date().getTime();
+  var timerName = 'container' + (index + 1);
+  var timerLoc = document.getElementById(timerName);
+
   if (currentTime - lastAlertTime < alertDelay) {
     return; // Ignore consecutive calls within the delay period
   }
   
-  if (timerCount > 1) {
-    var timerName = 'container' + (index + 1);
-    var timerLoc = document.getElementById(timerName);
-    if (timerLoc) {
+  if (timerCount > 1 && timerName != "container1" && timerLoc) {
       timerLoc.remove();
       timerCount -= 1;
-      lastAlertTime = currentTime;
-    }    
+      lastAlertTime = currentTime;  
   } else {
     alert('Must have at least one timer.');
     lastAlertTime = currentTime;
@@ -403,52 +403,81 @@ function toggleAll() {
 };
 
 
-// Popup script
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Send message to the background script to retrieve the timers
-  chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
-    var timers = response.timers;
-
-    // Restore the timers in the popup
-    if (timers && timers.length > 0) {
-      timers.forEach(function(timer, index) {
-        var timeInput = document.getElementById('timeInput' + (index + 1));
-        if (timeInput) {
-          timeInput.value = timer;
-        }
-      });
-    }
-  });
-});
-
-// Popup script
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Send message to the background script to retrieve the timers
-  chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
-    var timersData = response.timers;
-
-    // Restore the timers in the popup
-    if (timersData && timersData.length > 0) {
-      timersData.forEach(function(data, index) {
-        var nameInput = document.getElementById('nameInput' + (index + 1));
-        var timeInput = document.getElementById('timeInput' + (index + 1));
-        var switchInput = document.getElementById('switchInput' + (index + 1));
-
-        if (nameInput && timeInput && switchInput) {
-          nameInput.value = data.name;
-          timeInput.value = data.time;
-          switchInput.checked = data.switch;
-        }
-      });
-    }
-  });
-});
-
 function createNewTimer() {
-  createElements();
-  assignTimers();
-  generateListeners();
+  if (loadTimer === 1) {
+    chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
+      var timersData = response.timers;
+  
+      // Restore the timers in the popup
+      if (timersData && timersData.length > 0) {
+        timersData.forEach(function(data, index) {
+          // Generate our timers
+          createElements();
+          assignTimers();
+          generateListeners();
+
+          // Grab our timer elements
+          var nameInput = document.getElementById('timeTitle' + (index + 1));
+          var timeInput = document.getElementById('timeInput' + (index + 1));
+          var switchInput = document.getElementById('checkbox' + (index + 1));
+  
+          // Update timers with stored data
+          if (nameInput && timeInput && switchInput) {
+            nameInput.value = data.name;
+            timeInput.value = data.time;
+            switchInput.checked = data.switch;
+
+            // Trigger event manually
+            var inputEvent = new Event('input');
+            nameInput.dispatchEvent(inputEvent);
+            timeInput.dispatchEvent(inputEvent);
+            switchInput.dispatchEvent(inputEvent);
+          }
+        });
+      }
+      
+      loadTimer -= 1;
+    });
+  } else {
+    createElements();
+    assignTimers();
+    generateListeners();
+  }
 };
 
+document.addEventListener('DOMContentLoaded', function() {
+  // Send message to the background script to retrieve the timers
+});
+
+function saveTimersData() {
+  var timersData = [];
+  var timers = document.querySelectorAll('.timeInput');
+  var switches = document.querySelectorAll('.checkbox');
+  var names = document.querySelectorAll('.timeTitle');
+
+  // Prepare the timers data to be sent to the background script
+  for (var i = 0; i < timers.length; i++) {
+    var timerData = {
+      name: '',
+      time: '',
+      switch: false
+    };
+
+    var nameInput = names[i];
+    var timeInput = timers[i];
+    var switchInput = switches[i];
+
+    if (nameInput && timeInput && switchInput) {
+      timerData.name = nameInput.value;
+      timerData.time = timeInput.value;
+      timerData.switch = switchInput.checked;
+    }
+
+    timersData.push(timerData);
+  }
+
+  // Send message to the background script to save the timers
+  chrome.runtime.sendMessage({ action: 'saveTimers', timers: timersData }, function(response) {
+    console.log(response.message);
+  });
+}
