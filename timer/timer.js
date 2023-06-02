@@ -2,9 +2,11 @@ let countdown = false;
 var timerCount = 0;
 var toggleStatus = 1;
 var loadTimer = 1;
+var tabId = document.addEventListener('DOMContentLoaded', gatherTab);
 
 createNewTimer();
 toggleAll();
+
 document.getElementById('addNewButton').addEventListener('click', createNewTimer);
 document.getElementById('toggleButton').addEventListener('click', toggleAll);
 document.getElementById('homeButton').addEventListener('click', function(){
@@ -28,6 +30,12 @@ function verifyInput(timeIndex) {
     this.lastAlertTime = null;
   }
 };
+
+function gatherTab() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    return tabs[0].id;
+  });
+}
 
 function assignTimers() {
   // Select all occurrences of the element with the specified selector
@@ -62,7 +70,6 @@ function defineDates(timeInput) {
 };
 
 function createElements() {
-  // Increase TimerCount variable for next Timer
   timerCount++;
 
   // Create container element
@@ -226,6 +233,7 @@ function generateListeners() {
       removeTimer(index);
       reassignIDs();
       assignTimers();
+      saveTimersData();
     });
   });
 
@@ -246,25 +254,29 @@ function generateListeners() {
 
       clearInterval(countdowns[index]);
 
-      countdown = setInterval(function() {
-        var currentTime = new Date().getTime();
-        var targetTime = defineDates(timeInput);
-        var distance = targetTime - currentTime;
+      if (timeInput === "" || timeInput === null) {
+        return
 
-        var hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-        var minutes = Math.floor((distance / (1000 * 60)) % 60);
-        var seconds = Math.floor((distance / 1000) % 60);
-
-        timerElement.innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
-        timerElement.style.fontSize = '5.5vw';
-
-        if (seconds <= 0 && (minutes <= 0 || minutes == "") && (hours <= 0 || hours == "") && checkboxStatus.checked === true) {
-          reloadPage();
-        }
-      }, 1000);
-
-      countdowns[index] = countdown; // Store the countdown interval in the array
-    });
+      } else {
+        countdown = setInterval(function() {
+          var currentTime = new Date().getTime();
+          var targetTime = defineDates(timeInput);
+          var distance = targetTime - currentTime;
+  
+          var hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+          var minutes = Math.floor((distance / (1000 * 60)) % 60);
+          var seconds = Math.floor((distance / 1000) % 60);
+  
+          timerElement.innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
+          timerElement.style.fontSize = '5.5vw';
+  
+          if (seconds <= 0 && (minutes <= 0 || minutes == "") && (hours <= 0 || hours == "") && checkboxStatus.checked === true) {
+            reloadPage();
+          }
+        }, 1000);
+  
+        countdowns[index] = countdown; // Store the countdown interval in the array
+    }});
   });
 
   var timers = document.querySelectorAll('.timeInput');
@@ -297,9 +309,9 @@ function removeTimer(index) {
     return; // Ignore consecutive calls within the delay period
   }
   
-  if (timerCount > 1 && timerName != "container1" && timerLoc) {
+  if (document.getElementById('container2') != null && timerLoc) {
       timerLoc.remove();
-      timerCount -= 1;
+      timerCount--;;
       lastAlertTime = currentTime;  
   } else {
     alert('Must have at least one timer.');
@@ -445,10 +457,6 @@ function createNewTimer() {
   }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Send message to the background script to retrieve the timers
-});
-
 function saveTimersData() {
   var timersData = [];
   var timers = document.querySelectorAll('.timeInput');
@@ -477,7 +485,7 @@ function saveTimersData() {
   }
 
   // Send message to the background script to save the timers
-  chrome.runtime.sendMessage({ action: 'saveTimers', timers: timersData }, function(response) {
+  chrome.runtime.sendMessage({ action: 'saveTimers', timers: timersData, tab: tabId}, function(response) {
     console.log(response.message);
   });
-}
+};
