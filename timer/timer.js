@@ -1,15 +1,80 @@
-let countdown = false;
-var timerCount = 0;
 var toggleStatus = 1;
-var loadTimer = 1;
+let countdown = false;
 
-createNewTimer();
-toggleAll();
-document.getElementById('addNewButton').addEventListener('click', createNewTimer);
+var timerCount = document.addEventListener('DOMContentLoaded', getTimers);
+var tabId = document.addEventListener('DOMContentLoaded', gatherTab);
+
+chrome.runtime.sendMessage({action: 'checkTab', tab: tabId}, function(response) {
+  var output = response.tabStatus;
+  createNewTimer(output);
+  toggleAll();
+
+});
+
+function createNewTimer(output, tabId) {
+  if (output === true) {
+    chrome.runtime.sendMessage({action: 'getTimers', tab: tabId}, function(response) {
+      if (response.tab === tabId) {
+        var timers = response.timers;
+
+        // Restore the timers in the popup
+        timers.forEach(function(data, index) {
+          // Generate our timers
+          createElements();
+          assignTimers();
+          generateListeners();
+
+          // Grab our timer elements
+          var nameInput = document.getElementById('timeTitle' + (index + 1));
+          var timeInput = document.getElementById('timeInput' + (index + 1));
+          var switchInput = document.getElementById('checkbox' + (index + 1));
+
+          // Update timers with stored data
+          nameInput.value = data.name;
+          timeInput.value = data.time;
+          switchInput.checked = data.switch;
+
+          // Trigger event manually
+          var inputEvent = new Event('input');
+          nameInput.dispatchEvent(inputEvent);
+          timeInput.dispatchEvent(inputEvent);
+          switchInput.dispatchEvent(inputEvent);
+});
+      }
+    });
+  } else {
+    createElements();
+    assignTimers();
+    generateListeners();
+  }
+};
+
+document.getElementById('addNewButton').addEventListener('click', function(){
+  createNewTimer(false);
+  timerCount = getTimers();
+
+});
 document.getElementById('toggleButton').addEventListener('click', toggleAll);
 document.getElementById('homeButton').addEventListener('click', function(){
   window.location.href = '../home/home.html';
 })
+
+function getTimers() {
+  var timers = 0;
+  var check = true;
+  var counter = 1;
+  while(check) {
+      if(document.getElementById('container' + counter) != null) {
+          timers++;
+          counter++;
+      }
+      else {
+          check = false;
+          break;
+      }
+  }
+  return timers;
+};
 
 function verifyInput(timeIndex) {
   var timeName = 'timeInput' + (timeIndex + 1);
@@ -29,6 +94,14 @@ function verifyInput(timeIndex) {
   }
 };
 
+function gatherTab() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tabId = tabs[0].id;
+    // Call the function that requires the tabId here
+    createNewTimer(false, tabId);
+  });
+};
+
 function assignTimers() {
   // Select all occurrences of the element with the specified selector
   var elements = document.querySelectorAll('.timeTitle');
@@ -39,11 +112,6 @@ function assignTimers() {
     var element = elements[i];
     element.innerHTML = 'Timer ' + (i + 1);
   }
-};
-
-// Function to reload the current active tab
-function reloadPage() {
-  chrome.tabs.reload()
 };
 
 function defineDates(timeInput) {
@@ -62,8 +130,7 @@ function defineDates(timeInput) {
 };
 
 function createElements() {
-  // Increase TimerCount variable for next Timer
-  timerCount++;
+  var timerCount = getTimers() + 1;
 
   // Create container element
   var clone = document.createElement('div');
@@ -211,59 +278,61 @@ function createElements() {
 };
 
 function generateListeners() {
-  var elements = document.querySelectorAll('.checkbox');
+  var checkboxes = document.querySelectorAll('.checkbox');
 
-  elements.forEach((element, index) => {
-    element.addEventListener('change', function() {
+  checkboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener('change', function() {
       verifyInput.bind(this)(index);
     });
   });
 
-  var elements = document.querySelectorAll('.xButton');
+  var xButtons = document.querySelectorAll('.xButton');
 
-  elements.forEach((element, index) => {
-    element.addEventListener('click', function() {
+  xButtons.forEach((xButton, index) => {
+    xButton.addEventListener('click', function() {
       removeTimer(index);
       reassignIDs();
       assignTimers();
+      saveTimersData();
     });
   });
 
-  var elements = document.querySelectorAll('.timeInput');
+  var timeInputs = document.querySelectorAll('.timeInput');
 
   var countdowns = []; // Declare an array to store countdown intervals
 
-  elements.forEach((element, index) => {
+  timeInputs.forEach((timeInput, index) => {
     var countdown; // Declare countdown variable
 
-    element.addEventListener('input', function() {
+    timeInput.addEventListener('input', function() {
       var checkboxName = 'checkbox' + (index + 1);
       var timeName = 'timeInput' + (index + 1);
       var timerName = 'timer' + (index + 1);
-      var timeInput = document.getElementById(timeName).value;
+      var timeInputValue = document.getElementById(timeName).value;
       var timerElement = document.getElementById(timerName);
       var checkboxStatus = document.getElementById(checkboxName);
 
       clearInterval(countdowns[index]);
 
-      countdown = setInterval(function() {
-        var currentTime = new Date().getTime();
-        var targetTime = defineDates(timeInput);
-        var distance = targetTime - currentTime;
+      if (timeInputValue === "" || timeInputValue === null) {
+        return;
+      } else {
+        countdown = setInterval(function() {
+          var currentTime = new Date().getTime();
+          var targetTime = defineDates(timeInputValue);
+          var distance = targetTime - currentTime;
 
-        var hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-        var minutes = Math.floor((distance / (1000 * 60)) % 60);
-        var seconds = Math.floor((distance / 1000) % 60);
+          var hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+          var minutes = Math.floor((distance / (1000 * 60)) % 60);
+          var seconds = Math.floor((distance / 1000) % 60);
 
-        timerElement.innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
-        timerElement.style.fontSize = '5.5vw';
+          timerElement.innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
+          timerElement.style.fontSize = '5.5vw';
 
-        if (seconds <= 0 && (minutes <= 0 || minutes == "") && (hours <= 0 || hours == "") && checkboxStatus.checked === true) {
-          reloadPage();
-        }
-      }, 1000);
+        }, 1000);
 
-      countdowns[index] = countdown; // Store the countdown interval in the array
+        countdowns[index] = countdown; // Store the countdown interval in the array
+      }
     });
   });
 
@@ -283,7 +352,8 @@ function generateListeners() {
       saveTimersData();
     });
   });
-};  
+};
+ 
 
 var lastAlertTime = 0;
 var alertDelay = 1000; // Delay in milliseconds between consecutive alerts
@@ -297,9 +367,9 @@ function removeTimer(index) {
     return; // Ignore consecutive calls within the delay period
   }
   
-  if (timerCount > 1 && timerName != "container1" && timerLoc) {
+  if (document.getElementById('container2') != null && timerLoc) {
       timerLoc.remove();
-      timerCount -= 1;
+      timerCount--;;
       lastAlertTime = currentTime;  
   } else {
     alert('Must have at least one timer.');
@@ -402,58 +472,12 @@ function toggleAll() {
   toggleButton.textContent = (toggleStatus === 0) ? "Toggle On" : "Toggle Off";
 };
 
-
-function createNewTimer() {
-  if (loadTimer === 1) {
-    chrome.runtime.sendMessage({ action: 'getTimers' }, function(response) {
-      var timersData = response.timers;
-  
-      // Restore the timers in the popup
-      if (timersData && timersData.length > 0) {
-        timersData.forEach(function(data, index) {
-          // Generate our timers
-          createElements();
-          assignTimers();
-          generateListeners();
-
-          // Grab our timer elements
-          var nameInput = document.getElementById('timeTitle' + (index + 1));
-          var timeInput = document.getElementById('timeInput' + (index + 1));
-          var switchInput = document.getElementById('checkbox' + (index + 1));
-  
-          // Update timers with stored data
-          if (nameInput && timeInput && switchInput) {
-            nameInput.value = data.name;
-            timeInput.value = data.time;
-            switchInput.checked = data.switch;
-
-            // Trigger event manually
-            var inputEvent = new Event('input');
-            nameInput.dispatchEvent(inputEvent);
-            timeInput.dispatchEvent(inputEvent);
-            switchInput.dispatchEvent(inputEvent);
-          }
-        });
-      }
-      
-      loadTimer -= 1;
-    });
-  } else {
-    createElements();
-    assignTimers();
-    generateListeners();
-  }
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Send message to the background script to retrieve the timers
-});
-
 function saveTimersData() {
   var timersData = [];
   var timers = document.querySelectorAll('.timeInput');
   var switches = document.querySelectorAll('.checkbox');
   var names = document.querySelectorAll('.timeTitle');
+  tabId = gatherTab();
 
   // Prepare the timers data to be sent to the background script
   for (var i = 0; i < timers.length; i++) {
@@ -467,7 +491,7 @@ function saveTimersData() {
     var timeInput = timers[i];
     var switchInput = switches[i];
 
-    if (nameInput && timeInput && switchInput) {
+    if (nameInput && timeInput && switchInput && tabId) {
       timerData.name = nameInput.value;
       timerData.time = timeInput.value;
       timerData.switch = switchInput.checked;
@@ -477,7 +501,7 @@ function saveTimersData() {
   }
 
   // Send message to the background script to save the timers
-  chrome.runtime.sendMessage({ action: 'saveTimers', timers: timersData }, function(response) {
+  chrome.runtime.sendMessage({action: 'saveTimers', timers: timersData, tab: tabId}, function(response) {
     console.log(response.message);
   });
-}
+};
