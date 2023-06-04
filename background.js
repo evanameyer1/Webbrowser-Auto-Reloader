@@ -1,25 +1,43 @@
-var allTimers = {};
+var savedTabs = [];
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  var tabId = message.tab;
+// Dictionary to store timers for each tab
+const allTimers = {};
+
+// Listen for messages from content scripts
+chrome.runtime.onMessage.addListener((message, sender) => {
+  // Get the tab ID
+  const tabId = sender.tab.id;
+
   if (message.action === 'saveTimers') {
-    var timersData = message.timers;    
-    allTimers[tabId] = timersData;
+    var timersData = message.timers;
+    allTimers.tabId = timersData;
 
     createTimers(allTimers);
     sendResponse({ message: 'Timers data received and processed successfully!' });
 
   } else if (message.action === 'getTimers') {
-    var timers = allTimers[tabId];
-    sendResponse({ tab: tabId, timers: timers });
-    
-  } else if (message.action === 'checkTab'){
-    tabId = message.tab;
-    output = tabId in allTimers;  
-    sendResponse({tabStatus: output});
+    var timers = allTimers.tabId;
+    sendResponse({timerElements : timers});
+
+  } else if (message.action === 'checkTab') {
+    var output = savedTabs.includes(tabId);
+    sendResponse({ tabStatus: output });
+
+    if (output === false) {
+      savedTabs.push(tabId);
+    }
   }
 
   return true; // Indicates that the response will be sent asynchronously
+});
+
+// Listen for tab switch events
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  // Get the tab ID of the newly activated tab
+  const tabId = activeInfo.tabId;
+
+  // Send a message to the content script to update the timer display
+  chrome.tabs.sendMessage(tabId, { type: 'updateTimer', timer: timers[tabId] });
 });
 
 function defineDates(timeInput) {
@@ -45,7 +63,7 @@ function createTimers(allTimers) {
   Object.entries(allTimers).forEach(function([tabId, timers]) {
     timers.forEach(function(timer) {
       var switchInput = timer.switch;
-      var timeInput = timer.timeInput;
+      var timeInput = timer.time;
 
       if (switchInput) {
         countdown = setInterval(function() {
