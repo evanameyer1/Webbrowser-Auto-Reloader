@@ -1,47 +1,86 @@
 var toggleStatus = 1;
 let countdown = false;
+var countdowns = [];
 
-var timerCount = document.addEventListener('DOMContentLoaded', getTimers);
-var tabId = document.addEventListener('DOMContentLoaded', gatherTab);
+toggleAll();
 
-chrome.runtime.sendMessage({action: 'checkTab', tab: tabId}, function(response) {
-  var output = response.tabStatus;
-  createNewTimer(output, tabId);
-  toggleAll();
+var savedTabs = [];
 
+document.getElementById('toggleButton').addEventListener('click', toggleAll);
+document.getElementById('homeButton').addEventListener('click', function(){
+  var timers = document.querySelectorAll('.container');
+  var timersLength = timers.length;
+  var i = 1;
+
+  while (i < timersLength) {
+    var timerName = 'container' + (i + 1);
+    var timerLoc = document.getElementById(timerName);
+    timerCount = getTimers();
+
+    if (timerCount > 1) {
+      timerLoc.remove();
+    } else {
+      alert('Must have at least one timer.');
+    }
+    timerCount = getTimers();
+    i++
+  }
+
+  reassignIDs();
+  assignTimers();
+  timerCount = getTimers();
+
+  var firstInput = document.getElementById('timeInput1');
+  var firstSwitch = document.getElementById('checkbox1');
+  var timerText = document.getElementById('timer1');
+
+  firstInput.value = '';
+  firstSwitch.checked = false;
+  clearInterval(countdowns[0]);
+  timerText.textContent = '00:00:00';
+  saveTimersData();
 });
 
-function createNewTimer(output, tabId) {
-  function updateTimers(timers) {
-    timers.forEach(function (timer, index) {
-      createElements();
-      assignTimers();
-      generateListeners();
+document.addEventListener('DOMContentLoaded', function() {
+    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+      tabId = tabs[0].id;
+      chrome.runtime.sendMessage({ action: 'checkTimerTab', tab: tabId}, function(response) {
+          var output = response.tabStatus; 
 
-      var nameInput = document.getElementById('timeTitle' + (index + 1));
-      var timeInput = document.getElementById('timeInput' + (index + 1));
-      var switchInput = document.getElementById('checkbox' + (index + 1));
+          if (output) {
+            chrome.runtime.sendMessage({ action: 'getTimers', tab: tabId }, function(response) {
+              var timers = response.timerElements;
 
-      nameInput.value = timer.name;
-      timeInput.value = timer.time;
-      switchInput.checked = timer.switch;
+              timers.forEach(function(timer, index) {
+                createElements();
+                assignTimers();
+                generateListeners();
 
-      // Trigger input event manually
-      var inputEvent = new Event('input', { bubbles: true, cancelable: true });
-      nameInput.dispatchEvent(inputEvent);
-      timeInput.dispatchEvent(inputEvent);
-      switchInput.dispatchEvent(inputEvent);
-    });
-  }
+                var timeInput = document.getElementById('timeInput' + (index + 1));
+                var switchInput = document.getElementById('checkbox' + (index + 1));
 
-  function handleResponse(response) {
-    if (response.tab === tabId) {
-      var timers = response.timers;
-      updateTimers(timers);
-    }
-  }
+                timeInput.value = timer.time;
+                switchInput.checked = timer.switch;
 
-  function createElements() {
+                var inputEvent = new Event('input');
+                timeInput.dispatchEvent(inputEvent);
+                switchInput.dispatchEvent(inputEvent);
+              });
+            });
+          } else {
+            createElements();
+            assignTimers();
+            generateListeners();
+    }})
+  });
+});
+
+function getTimers() {
+    var timers = document.querySelectorAll('.container');
+    return timers.length;
+}
+
+function createElements() {
     var timerCount = getTimers() + 1;
   
     // Create container element
@@ -187,9 +226,9 @@ function createNewTimer(output, tabId) {
       parentElement.appendChild(clone);
       parentElement.appendChild(addButton);
     }
-  }
+}
 
-  function assignTimers() {
+function assignTimers() {
     // Select all occurrences of the element with the specified selector
     var elements = document.querySelectorAll('.timeTitle');
   
@@ -199,9 +238,9 @@ function createNewTimer(output, tabId) {
       var element = elements[i];
       element.innerHTML = 'Timer ' + (i + 1);
     }
-  }
+}
 
-  function generateListeners() {
+function generateListeners() {
     var checkboxes = document.querySelectorAll('.checkbox');
   
     checkboxes.forEach((checkbox, index) => {
@@ -217,24 +256,23 @@ function createNewTimer(output, tabId) {
         removeTimer(index);
         reassignIDs();
         assignTimers();
+
+        timerCount = getTimers();
+
         saveTimersData();
       });
     });
   
     var timeInputs = document.querySelectorAll('.timeInput');
   
-    var countdowns = []; // Declare an array to store countdown intervals
-  
     timeInputs.forEach((timeInput, index) => {
       var countdown; // Declare countdown variable
   
       timeInput.addEventListener('input', function() {
-        var checkboxName = 'checkbox' + (index + 1);
         var timeName = 'timeInput' + (index + 1);
         var timerName = 'timer' + (index + 1);
         var timeInputValue = document.getElementById(timeName).value;
         var timerElement = document.getElementById(timerName);
-        var checkboxStatus = document.getElementById(checkboxName);
   
         clearInterval(countdowns[index]);
   
@@ -276,214 +314,189 @@ function createNewTimer(output, tabId) {
         saveTimersData();
       });
     });
-  }
-
-  if (output === true) {
-    chrome.runtime.sendMessage({ action: 'getTimers', tab: tabId }, handleResponse);
-  } else {
-    createElements();
-    assignTimers();
-    generateListeners();
-  }
-}
-
-document.getElementById('addNewButton').addEventListener('click', function () {
-    createNewTimer(false, tabId);
-    timerCount = getTimers();
-});
-
-document.getElementById('toggleButton').addEventListener('click', toggleAll);
-document.getElementById('homeButton').addEventListener('click', function(){
-  window.location.href = '../home/home.html';
-})
-
-function getTimers() {
-  var timers = document.querySelectorAll('.container');
-  return timers.length;
 }
 
 function verifyInput(checkbox, timeIndex) {
-  var timeName = 'timeInput' + (timeIndex + 1);
-  var timeInput = document.getElementById(timeName).value;
-
-  if (timeInput === "") {
-    var currentTime = new Date().getTime();
-
-    if (!lastAlertTime || currentTime - lastAlertTime > 1000) {
-      alert("Please select a time slot.");
-      lastAlertTime = currentTime;
-    }
-
+    var timeName = 'timeInput' + (timeIndex + 1);
+    var timeInput = document.getElementById(timeName).value;
+  
+    if (timeInput === "") {
+    alert("Please select a time slot.");
     checkbox.checked = false;
-  } else {
-    lastAlertTime = null;
-  }
+    }
 }
-
-function gatherTab() {
-  chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
-    tabId = tabs[0].id;
-  });
-}
-
-function defineDates(timeInput) {
-  var currentTime = new Date();
-  var hours = parseInt(timeInput.substring(0, 2));
-  var minutes = parseInt(timeInput.substring(3, 5));
-
-  var targetTime = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), hours, minutes, 0);
-
-  if (targetTime < currentTime) {
-    // If the target time has already passed, add one day to the target date
-    targetTime.setDate(targetTime.getDate() + 1);
-  }
-
-  return targetTime;
-} 
 
 var lastAlertTime = 0;
 var alertDelay = 1000; // Delay in milliseconds between consecutive alerts
 
 function removeTimer(index) {
-  var currentTime = new Date().getTime();
-  var timerName = 'container' + (index + 1);
-  var timerLoc = document.getElementById(timerName);
-  timerCount = getTimers();
+    var currentTime = new Date().getTime();
+    var timerName = 'container' + (index + 1);
+    var timerLoc = document.getElementById(timerName);
+    timerCount = getTimers();
 
-  if (currentTime - lastAlertTime < alertDelay) {
-    return; // Ignore consecutive calls within the delay period
-  }
-  
-  if (timerCount > 1) {
-    timerLoc.remove();
-    timerCount--;
-    lastAlertTime = currentTime;
-  } else {
-    alert('Must have at least one timer.');
-    lastAlertTime = currentTime;
-  }  
+    if (currentTime - lastAlertTime < alertDelay) {
+      return; // Ignore consecutive calls within the delay period
+    }
+
+    if (timerCount > 1) {
+      timerLoc.remove();
+      timerCount--;
+      lastAlertTime = currentTime;
+    } else {
+      alert('Must have at least one timer.');
+      lastAlertTime = currentTime;
+    }  
 }
 
 function reassignIDs() {
-  var elements = document.querySelectorAll('.timerContainer');
-  elements.forEach((element, index) => {
-    element.id = 'timerContainer' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timerInfo');
-  elements.forEach((element, index) => {
-    element.id = 'timerInfo' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timeTitle');
-  elements.forEach((element, index) => {
-    element.id = 'timeTitle' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.targetTime');
-  elements.forEach((element, index) => {
-    element.id = 'targetTime' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.customLabel');
-  elements.forEach((element, index) => {
-    element.id = 'customLabel' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timeInput');
-  elements.forEach((element, index) => {
-    element.id = 'timeInput' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.confirmButton');
-  elements.forEach((element, index) => {
-    element.id = 'confirmButton' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.checkbox');
-  elements.forEach((element, index) => {
-    element.id = 'checkbox' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.sliderRound');
-  elements.forEach((element, index) => {
-    element.id = 'sliderRound' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.on');
-  elements.forEach((element, index) => {
-    element.id = 'on' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.off');
-  elements.forEach((element, index) => {
-    element.id = 'off' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timer');
-  elements.forEach((element, index) => {
-    element.id = 'timer' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timerText');
-  elements.forEach((element, index) => {
-    element.id = 'timerText' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.container');
-  elements.forEach((element, index) => {
-    element.id = 'container' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.xButton');
-  elements.forEach((element, index) => {
-    element.id = 'xButton' + (index + 1);
-  });
-
-  var elements = document.querySelectorAll('.timerBlock');
-  elements.forEach((element, index) => {
-    element.id = 'timerBlock' + (index + 1);
-  });
+    var elements = document.querySelectorAll('.timerContainer');
+    elements.forEach((element, index) => {
+      element.id = 'timerContainer' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timerInfo');
+    elements.forEach((element, index) => {
+      element.id = 'timerInfo' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timeTitle');
+    elements.forEach((element, index) => {
+      element.id = 'timeTitle' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.targetTime');
+    elements.forEach((element, index) => {
+      element.id = 'targetTime' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.customLabel');
+    elements.forEach((element, index) => {
+      element.id = 'customLabel' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timeInput');
+    elements.forEach((element, index) => {
+      element.id = 'timeInput' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.confirmButton');
+    elements.forEach((element, index) => {
+      element.id = 'confirmButton' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.checkbox');
+    elements.forEach((element, index) => {
+      element.id = 'checkbox' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.sliderRound');
+    elements.forEach((element, index) => {
+      element.id = 'sliderRound' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.on');
+    elements.forEach((element, index) => {
+      element.id = 'on' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.off');
+    elements.forEach((element, index) => {
+      element.id = 'off' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timer');
+    elements.forEach((element, index) => {
+      element.id = 'timer' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timerText');
+    elements.forEach((element, index) => {
+      element.id = 'timerText' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.container');
+    elements.forEach((element, index) => {
+      element.id = 'container' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.xButton');
+    elements.forEach((element, index) => {
+      element.id = 'xButton' + (index + 1);
+    });
+  
+    var elements = document.querySelectorAll('.timerBlock');
+    elements.forEach((element, index) => {
+      element.id = 'timerBlock' + (index + 1);
+    });
 }
 
 function toggleAll() {
-  var toggleButton = document.getElementById('toggleButton');
-  var checkboxes = document.querySelectorAll('.checkbox');
-
-  checkboxes.forEach((checkbox) => {
-    checkbox.checked = (toggleStatus === 0);
-  });
-
-  toggleStatus = (toggleStatus === 0) ? 1 : 0;
-
-  toggleButton.textContent = (toggleStatus === 0) ? "Toggle On" : "Toggle Off";
+    var toggleButton = document.getElementById('toggleButton');
+    var checkboxes = document.querySelectorAll('.checkbox');
+  
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = (toggleStatus === 0);
+    });
+  
+    toggleStatus = (toggleStatus === 0) ? 1 : 0;
+  
+    toggleButton.textContent = (toggleStatus === 0) ? "Toggle On" : "Toggle Off";
 }
+
+function defineDates(timeInput) {
+    var currentTime = new Date();
+    var hours = parseInt(timeInput.substring(0, 2));
+    var minutes = parseInt(timeInput.substring(3, 5));
+  
+    var targetTime = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), hours, minutes, 0);
+  
+    if (targetTime < currentTime) {
+      // If the target time has already passed, add one day to the target date
+      targetTime.setDate(targetTime.getDate() + 1);
+    }
+  
+    return targetTime;
+} 
 
 function saveTimersData() {
-  var timersData = [];
-  var timers = document.querySelectorAll('.timeInput');
-  var switches = document.querySelectorAll('.checkbox');
+  chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+    tabId = tabs[0].id;
 
-  // Prepare the timers data to be sent to the background script
-  for (var i = 0; i < timers.length; i++) {
-    var timerData = {
-      time: '',
-      switch: false
-    };
-
-    var timeInput = timers[i];
-    var switchInput = switches[i];
-
-    if (timeInput && switchInput) {
-      timerData.time = timeInput.value;
-      timerData.switch = switchInput.checked;
+    var timersData = [];
+    var timers = document.querySelectorAll('.timeInput');
+    var switches = document.querySelectorAll('.checkbox');
+  
+    // Prepare the timers data to be sent to the background script
+    for (var i = 0; i < timers.length; i++) {
+      var timerData = {
+        time: '',
+        switch: false
+      };
+  
+      var timeInput = timers[i];
+      var switchInput = switches[i];
+  
+      if (timeInput && switchInput) {
+        timerData.time = timeInput.value;
+        timerData.switch = switchInput.checked;
+      }
+  
+      timersData.push(timerData);
     }
+  
+    // Send message to the background script to save the timers
+    chrome.runtime.sendMessage({action: 'saveTimers', timers: timersData, tab: tabId}, function(response) {
+      console.log(response.message);
+    });
+  })};
 
-    timersData.push(timerData);
-  }
+document.getElementById('addNewButton').addEventListener('click', function () {
+  createElements();
+  assignTimers();
+  generateListeners();
 
-  // Send message to the background script to save the timers
-  chrome.runtime.sendMessage({action: 'saveTimers', timers: timersData, tab: tabId}, function(response) {
-    console.log(response.message);
-  });
-}
+  timerCount = getTimers();
+
+  saveTimersData();
+})
