@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             createElements();
             assignTimers();
             generateListeners();
+            saveTimersData()
     }})
   });
 });

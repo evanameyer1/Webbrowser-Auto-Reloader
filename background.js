@@ -1,8 +1,5 @@
 var savedTimerTabs = [];
-var savedIntervalTabs = [];
-
 const allTimers = {};
-const allIntervals = {};
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'saveTimers') {
@@ -26,28 +23,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (output === false) {
       savedTimerTabs.push(tabId);
     }
-
-  } else if (message.action === 'saveIntervals') {
-    var intervalsData = message.intervals;
-    var tabId = message.tab;
-    allIntervals[tabId] = intervalsData;
-
-    createIntervals(allIntervals);
-    sendResponse({ message: 'Intervals data received and processed successfully!' });
-
-  } else if (message.action === 'getIntervals') {
-    var tabId = message.tab;
-    var intervals = allIntervals[tabId];
-    sendResponse({ intervalElements: intervals });
-
-  } else if (message.action === 'checkIntervalTab') {
-    var tabId = message.tab;
-    var output = savedIntervalTabs.includes(tabId);
-    sendResponse({ tabStatus: output, items: allIntervals });
-
-    if (output === false) {
-      savedIntervalTabs.push(tabId);
-    }
   }
 });
 
@@ -63,10 +38,6 @@ function defineDates(timeInput) {
   }
 
   return targetTime;
-}
-
-function reloadPage(tabId) {
-  chrome.tabs.reload(tabId);
 }
 
 function createTimers(allTimers) {
@@ -87,52 +58,10 @@ function createTimers(allTimers) {
           var seconds = Math.floor((distance / 1000) % 60);
 
           if (seconds <= 0 && (minutes <= 0 || minutes === "") && (hours <= 0 || hours === "")) {
-            clearInterval(countdown);
-            reloadPage(tabId);
+            chrome.tabs.reload(parseInt(tabId));
           }
         }, 1000);
       }
     });
   });
 }
-
-function createIntervals(allIntervals) {
-  Object.entries(allIntervals).forEach(function ([tabId, intervals]) {
-    intervals.forEach(function (interval) {
-      var countdown;
-      var switchInput = interval.switch;
-      var hours = interval.hours;
-      var minutes = interval.minutes;
-      var seconds = interval.seconds;
-
-      if (switchInput) {
-        countdown = setInterval(function () {
-          if (
-            (hours === null || hours === "" || Number(hours) <= 0) &&
-            (minutes === null || minutes === "" || Number(minutes) <= 0) &&
-            (seconds === null || seconds === "" || Number(seconds) <= 0)
-          ) {
-            clearInterval(countdown);
-            reloadPage(tabId);
-          } else {
-            if (seconds > 0) {
-              seconds -= 1;
-            } else {
-              if (minutes > 0) {
-                minutes -= 1;
-                seconds = 59;
-              } else {
-                if (hours > 0) {
-                  hours -= 1;
-                  minutes = 59;
-                  seconds = 59;
-                }
-              }
-            }
-          }
-        }, 1000);
-      }
-    });
-  });
-}
-
